@@ -150,11 +150,11 @@ function love.keypressed(k, scancode, isrepeat)
     elseif k == "s" then
         -- map format is like this:
         --[[
-            [tile,x,y],[tile,x,y],etc
+            [tile,x,y]|[tile,x,y]|etc
         ]]
         local mapString = ""
         for i = 1, #mapTiles do
-            mapString = mapString .. "[" .. mapTiles[i].tile .. "," .. mapTiles[i].x .. "," .. mapTiles[i].y .. "],"
+            mapString = mapString .. "[" .. mapTiles[i].tile .. "," .. mapTiles[i].x .. "," .. mapTiles[i].y .. "]|"
         end
         mapString = mapString:sub(1, -2)
         love.filesystem.write("map.txt", mapString)
