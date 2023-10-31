@@ -18,6 +18,8 @@ function love.load()
     tilesetCanvas = love.graphics.newCanvas(1280/10*4, 720)
     tilesetCanvasWidth = 1280/10*4
     tilesetCanvasHeight = 720
+
+    curLayer = 1
     
     -- load tileset
     tiles = {}
@@ -41,7 +43,11 @@ function love.load()
     tilesetOffsetX = 0
     tilesetOffsetY = 0
 
+    -- 10 layers
     mapTiles = {}
+    for i = 1, 10 do
+        mapTiles[i] = {}
+    end
     -- holds a table like this: {x = 0, y = 0, tile = 1}
 
     mapScale = 1
@@ -82,36 +88,36 @@ function love.update(dt)
                 if mx >= 0 and mx < mapTileWidth and my >= 0 and my < mapTileHeight then
                     -- check if we're already placing a tile
                     local found = false
-                    for i = 1, #mapTiles do
-                        if mapTiles[i].x == mx and mapTiles[i].y == my then
+                    for i = 1, #mapTiles[curLayer] do
+                        if mapTiles[curLayer][i].x == mx and mapTiles[curLayer][i].y == my then
                             found = true
-                            mapTiles[i].tile = curTile
+                            mapTiles[curLayer][i].tile = curTile
                         end
                     end
                     if not found then
-                        table.insert(mapTiles, {x = mx, y = my, tile = curTile})
+                        table.insert(mapTiles[curLayer], {x = mx, y = my, tile = curTile})
                     end
                 end
             elseif multiTileSelect and curMapEditor == "tile" then
                 mx, my = mx / mapScale, my / mapScale
                 mx, my = mx - mapOffsetX, my - mapOffsetY
                 mx, my = math.floor(mx / mapTileSize), math.floor(my / mapTileSize)
-                if #mapTiles >= 1 then
+                if #mapTiles[curLayer] >= 1 then
                     mx, my = mx - ((multiTileSelects[1] - 1) % 12), my - math.floor((multiTileSelects[1] - 1) / 12)
 
                     if mx >= 0 and mx < mapTileWidth and my >= 0 and my < mapTileHeight then
                         -- check if we're already placing a tile
                         local found = false
-                        for i = 1, #mapTiles do
-                            if mapTiles[i] then
-                                if mapTiles[i].x == mx and mapTiles[i].y == my then
-                                    table.remove(mapTiles, i)
+                        for i = 1, #mapTiles[curLayer] do
+                            if mapTiles[curLayer][i] then
+                                if mapTiles[curLayer][i].x == mx and mapTiles[curLayer][i].y == my then
+                                    table.remove(mapTiles[curLayer], i)
                                 end
                             end
                         end
                         if not found then
                             for i = 1, #multiTileSelects do
-                                table.insert(mapTiles, {x = mx + ((multiTileSelects[i] - 1) % 12), y = my + math.floor((multiTileSelects[i] - 1) / 12), tile = multiTileSelects[i]})
+                                table.insert(mapTiles[curLayer], {x = mx + ((multiTileSelects[i] - 1) % 12), y = my + math.floor((multiTileSelects[i] - 1) / 12), tile = multiTileSelects[i]})
                             end
                         end
                     end
@@ -125,9 +131,9 @@ function love.update(dt)
             -- check if we're in the map
             if mx >= 0 and mx < mapTileWidth and my >= 0 and my < mapTileHeight then
                 -- check if we're already placing a tile
-                for i = 1, #mapTiles do
-                    if mapTiles[i].x == mx and mapTiles[i].y == my then
-                        table.remove(mapTiles, i)
+                for i = 1, #mapTiles[curLayer] do
+                    if mapTiles[curLayer][i].x == mx and mapTiles[curLayer][i].y == my then
+                        table.remove(mapTiles[curLayer], i)
                     end
                 end
             end
@@ -154,7 +160,10 @@ function love.keypressed(k, scancode, isrepeat)
         ]]
         local mapString = ""
         for i = 1, #mapTiles do
-            mapString = mapString .. "[" .. mapTiles[i].tile .. "," .. mapTiles[i].x .. "," .. mapTiles[i].y .. "]|"
+            for j = 1, #mapTiles[i] do
+                mapString = mapString .. "[" .. mapTiles[i][j].tile .. "," .. mapTiles[i][j].x .. "," .. mapTiles[i][j].y .. "]|"
+            end
+            --mapString = mapString .. "[" .. mapTiles[curLayer][i].tile .. "," .. mapTiles[curLayer][i].x .. "," .. mapTiles[curLayer][i].y .. "]|"
         end
         mapString = mapString:sub(1, -2)
         love.filesystem.write("map.txt", mapString)
@@ -163,8 +172,12 @@ function love.keypressed(k, scancode, isrepeat)
         local mapString = love.filesystem.read("map.txt")
         mapTiles = {}
         for tile, x, y in mapString:gmatch("%[(%d+),(%d+),(%d+)%]") do
-            table.insert(mapTiles, {x = tonumber(x), y = tonumber(y), tile = tonumber(tile)})
+            table.insert(mapTiles[curLayer], {x = tonumber(x), y = tonumber(y), tile = tonumber(tile)})
         end
+    elseif tonumber(k) then
+        local layer = tonumber(k)
+        if layer == 0 then layer = 10 end
+        curLayer = layer
     end
 end
 
@@ -196,14 +209,14 @@ function love.mousepressed(x, y, button, istouch, presses)
                 if x >= 0 and x < mapTileWidth and y >= 0 and y < mapTileHeight then
                     -- check if we're already placing a tile
                     local found = false
-                    for i = 1, #mapTiles do
-                        if mapTiles[i].x == x and mapTiles[i].y == y then
+                    for i = 1, #mapTiles[curLayer] do
+                        if mapTiles[curLayer][i].x == x and mapTiles[curLayer][i].y == y then
                             found = true
-                            mapTiles[i].tile = curTile
+                            mapTiles[curLayer][i].tile = curTile
                         end
                     end
                     if not found then
-                        table.insert(mapTiles, {x = x, y = y, tile = curTile})
+                        table.insert(mapTiles[curLayer], {x = x, y = y, tile = curTile})
                     end
                 end
             elseif curMapEditor == "tile" and multiTileSelect then -- multi tile select
@@ -215,16 +228,16 @@ function love.mousepressed(x, y, button, istouch, presses)
                     if x >= 0 and x < mapTileWidth and y >= 0 and y < mapTileHeight then
                         -- check if we're already placing a tile
                         local found = false
-                        for i = 1, #mapTiles do
-                            if mapTiles[i] then
-                                if mapTiles[i].x == x and mapTiles[i].y == y then
-                                    table.remove(mapTiles, i)
+                        for i = 1, #mapTiles[curLayer] do
+                            if mapTiles[curLayer][i] then
+                                if mapTiles[curLayer][i].x == x and mapTiles[curLayer][i].y == y then
+                                    table.remove(mapTiles[curLayer], i)
                                 end
                             end
                         end
                         if not found then
                             for i = 1, #multiTileSelects do
-                                table.insert(mapTiles, {x = x + ((multiTileSelects[i] - 1) % 12), y = y + math.floor((multiTileSelects[i] - 1) / 12), tile = multiTileSelects[i]})
+                                table.insert(mapTiles[curLayer], {x = x + ((multiTileSelects[i] - 1) % 12), y = y + math.floor((multiTileSelects[i] - 1) / 12), tile = multiTileSelects[i]})
                             end
                         end
                     end
@@ -298,7 +311,12 @@ function love.draw()
             love.graphics.setColor(1, 1, 1)
             -- draw map
             for i = 1, #mapTiles do
-                love.graphics.draw(tilesetImg, tiles[mapTiles[i].tile], mapTiles[i].x * mapTileSize, mapTiles[i].y * mapTileSize)
+                --love.graphics.draw(tilesetImg, tiles[mapTiles[i].tile], mapTiles[i].x * mapTileSize, mapTiles[i].y * mapTileSize)
+                for j = 1, #mapTiles[i] do
+                    if mapTiles[i][j].tile then
+                        love.graphics.draw(tilesetImg, tiles[mapTiles[i][j].tile], mapTiles[i][j].x * mapTileSize, mapTiles[i][j].y * mapTileSize)
+                    end
+                end
             end
             love.graphics.setColor(1, 1, 1)
         love.graphics.pop()
