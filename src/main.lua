@@ -386,7 +386,7 @@ function love.draw()
                         "\n" ..
                         "Left click and drag: Move Map/Tileset" ..
                         "\n" .. 
-                        "Number Keys: Switch Layers" ..,
+                        "Number Keys: Switch Layers",
                         0, 0, 1280, "right")
 end
 
