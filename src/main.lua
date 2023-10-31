@@ -7,13 +7,7 @@ local function fpsLerp(a, b, t, dt)
 end
 
 local function clamp(a, min, max)
-    if a < min then
-        return min
-    elseif a > max then
-        return max
-    else
-        return a
-    end
+    return math.max(min, math.min(max, a))
 end
 
 function love.load()
